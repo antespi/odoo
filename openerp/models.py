@@ -39,7 +39,6 @@
 
 """
 
-import copy
 import datetime
 import functools
 import itertools
@@ -479,6 +478,18 @@ class BaseModel(object):
             cls._columns.pop(name, None)
 
     @classmethod
+    def _pop_field(cls, name):
+        """ Remove the field with the given `name` from the model.
+            This method should only be used for manual fields.
+        """
+        field = cls._fields.pop(name)
+        cls._columns.pop(name, None)
+        cls._all_columns.pop(name, None)
+        if hasattr(cls, name):
+            delattr(cls, name)
+        return field
+
+    @classmethod
     def _add_magic_fields(cls):
         """ Introduce magic fields on the current class
 
@@ -640,12 +651,6 @@ class BaseModel(object):
             '_original_module': original_module,
         }
         cls = type(cls._name, (cls,), attrs)
-
-        # float fields are registry-dependent (digit attribute); duplicate them
-        # to avoid issues
-        for key, col in cls._columns.items():
-            if col._type == 'float':
-                cls._columns[key] = copy.copy(col)
 
         # instantiate the model, and initialize it
         model = object.__new__(cls)
@@ -2490,8 +2495,8 @@ class BaseModel(object):
                 self._create_table(cr)
                 has_rows = False
             else:
-                cr.execute('SELECT min(id) FROM "%s"' % (self._table,))
-                has_rows = cr.fetchone()[0] is not None
+                cr.execute('SELECT 1 FROM "%s" LIMIT 1' % self._table)
+                has_rows = cr.rowcount
 
             cr.commit()
             if self._parent_store:

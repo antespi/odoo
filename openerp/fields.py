@@ -249,7 +249,9 @@ class Field(object):
     _free_attrs = None          # list of semantic-free attribute names
 
     automatic = False           # whether the field is automatically created ("magic" field)
-    _origin = None              # the column or field interfaced by self, if any
+    inherited = False           # whether the field is inherited (_inherits)
+    column = None               # the column interfaced by the field
+    setup_done = False          # whether the field has been set up
 
     name = None                 # name of the field
     type = None                 # type of the field (string)
@@ -345,7 +347,7 @@ class Field(object):
 
     def reset(self):
         """ Prepare `self` for a new setup. """
-        self._setup_done = False
+        self.setup_done = False
         # self._triggers is a set of pairs (field, path) that represents the
         # computed fields that depend on `self`. When `self` is modified, it
         # invalidates the cache of each `field`, and registers the records to
@@ -358,8 +360,8 @@ class Field(object):
             and other properties). This method is idempotent: it has no effect
             if `self` has already been set up.
         """
-        if not self._setup_done:
-            self._setup_done = True
+        if not self.setup_done:
+            self.setup_done = True
             self._setup(env)
 
     def _setup(self, env):
@@ -407,6 +409,7 @@ class Field(object):
         self.compute = self._compute_related
         self.inverse = self._inverse_related
         if field._description_searchable(env):
+            # allow searching on self only if the related field is searchable
             self.search = self._search_related
 
         # copy attributes from field to self (string, help, etc.)
@@ -547,6 +550,15 @@ class Field(object):
                    bool(getattr(column, '_fnct_search', False))
         return bool(self.search)
 
+    def _description_sortable(self, env):
+        if self.store:
+            column = env[self.model_name]._columns.get(self.name)
+            return bool(getattr(column, 'store', True))
+        if self.inherited:
+            # self is sortable if the inherited field is itself sortable
+            return self.related_field._description_sortable(env)
+        return False
+
     _description_manual = property(attrgetter('manual'))
     _description_depends = property(attrgetter('depends'))
     _description_related = property(attrgetter('related'))
@@ -580,11 +592,10 @@ class Field(object):
     def to_column(self):
         """ return a low-level field object corresponding to `self` """
         assert self.store
-        if self._origin:
-            assert isinstance(self._origin, fields._column)
+        if self.column:
             # some columns are registry-dependent, like float fields (digits);
             # duplicate them to avoid sharing between registries
-            return copy(self._origin)
+            return copy(self.column)
 
         _logger.debug("Create fields._column for Field %s", self)
         args = {}

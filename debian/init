@@ -1,6 +1,6 @@
 #!/bin/bash
 ### BEGIN INIT INFO
-# Provides:          openerp-server
+# Provides:          odoo-server
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -11,21 +11,45 @@
 ### END INIT INFO
 ## more info: http://wiki.debian.org/LSBInitScripts
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+# DAEMON
+# Path to OpenERP daemon executable
 DAEMON=/usr/bin/openerp-server
-NAME=odoo
+
+# NAME
+# Name of this init script, must be equal to 'Provides' name in this fie header
+NAME=odoo-server
+
+# DESC
+# Description appears when start/stop is called
 DESC=odoo
+
+# CONFIG
+# Config file to use, review this when there are more than one OpenERP daemon running in this machine
 CONFIG=/etc/odoo/openerp-server.conf
+
+# LOGFILE
+# Log file to use, review this when there are more than one OpenERP daemon running in this machine
 LOGFILE=/var/log/odoo/odoo-server.log
-PIDFILE=/var/run/${NAME}.pid
+
+# USER
+# User executes OpeenERP daemon
 USER=odoo
+
+# GROUP
+# Main group of USER
+GROUP=$USER
+
+# Advance configuration. You should not to change these
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+PIDFILE=/var/run/${NAME}.pid
 export LOGNAME=$USER
 
+# Initialization script. You should not to chage anything bellow this line
 test -x $DAEMON || exit 0
 set -e
 
 function _start() {
-    start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $USER:$USER --background --make-pidfile --exec $DAEMON -- --config $CONFIG --logfile $LOGFILE
+    start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $USER:$GROUP --background --make-pidfile --exec $DAEMON -- --config $CONFIG --logfile $LOGFILE
 }
 
 function _stop() {

@@ -424,7 +424,7 @@ class configmanager(object):
             self.options['addons_path'] = os.path.join(self.options['root_path'], 'addons')
         else:
             self.options['addons_path'] = ",".join(
-                    os.path.abspath(os.path.expanduser(os.path.expandvars(x)))
+                    os.path.abspath(os.path.expanduser(os.path.expandvars(x.strip())))
                       for x in self.options['addons_path'].split(','))
 
         self.options['init'] = opt.init and dict.fromkeys(opt.init.split(','), 1) or {}

@@ -34,16 +34,16 @@ from openerp.tools.translate import _
 ADDRESS_FORMAT_LAYOUTS = {
     '%(city)s %(state_code)s\n%(zip)s': """
         <div class="address_format">
-            <field name="city" placeholder="City" style="width: 50%%"/>
-            <field name="state_id" class="oe_no_button" placeholder="State" style="width: 47%%" options='{"no_open": true}'/>
+            <field name="city" placeholder="City" style="width: 50%"/>
+            <field name="state_id" class="oe_no_button" placeholder="State" style="width: 47%" options='{"no_open": true}'/>
             <br/>
             <field name="zip" placeholder="ZIP"/>
         </div>
     """,
     '%(zip)s %(city)s': """
         <div class="address_format">
-            <field name="zip" placeholder="ZIP" style="width: 40%%"/>
-            <field name="city" placeholder="City" style="width: 57%%"/>
+            <field name="zip" placeholder="ZIP" style="width: 40%"/>
+            <field name="city" placeholder="City" style="width: 57%"/>
             <br/>
             <field name="state_id" class="oe_no_button" placeholder="State" options='{"no_open": true}'/>
         </div>
@@ -445,7 +445,7 @@ class res_partner(osv.Model, format_address):
         partners that aren't `commercial entities` themselves, and will be
         delegated to the parent `commercial entity`. The list is meant to be
         extended by inheriting classes. """
-        return ['vat']
+        return ['vat', 'credit_limit']
 
     def _commercial_sync_from_company(self, cr, uid, partner, context=None):
         """ Handle sync of commercial fields when a new parent commercial entity is set,

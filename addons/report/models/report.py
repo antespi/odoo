@@ -42,6 +42,7 @@ from distutils.version import LooseVersion
 from functools import partial
 from pyPdf import PdfFileWriter, PdfFileReader
 
+from pprint import pformat
 
 #--------------------------------------------------------------------------
 # Helpers
@@ -404,6 +405,7 @@ class Report(osv.Model):
         pdfdocuments = []
         temporary_files = []
 
+        _logger.info('bodies = ' + pformat(bodies))
         for index, reporthtml in enumerate(bodies):
             local_command_args = []
             pdfreport_fd, pdfreport_path = tempfile.mkstemp(suffix='.pdf', prefix='report.tmp.')
@@ -486,7 +488,8 @@ class Report(osv.Model):
         # Manual cleanup of the temporary files
         for temporary_file in temporary_files:
             try:
-                os.unlink(temporary_file)
+                _logger.info('do not remove PDF files')
+                # os.unlink(temporary_file)
             except (OSError, IOError):
                 _logger.error('Error when trying to remove file %s' % temporary_file)
 

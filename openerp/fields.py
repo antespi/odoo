@@ -21,6 +21,7 @@
 
 """ High-level objects for fields. """
 
+from collections import OrderedDict
 from datetime import date, datetime
 from functools import partial
 from operator import attrgetter
@@ -296,6 +297,13 @@ class Field(object):
         self._attrs = {key: val for key, val in kwargs.iteritems() if val is not None}
         self._free_attrs = []
 
+        # self._triggers is a set of pairs (field, path) that represents the
+        # computed fields that depend on `self`. When `self` is modified, it
+        # invalidates the cache of each `field`, and registers the records to
+        # recompute based on `path`. See method `modified` below for details.
+        self._triggers = set()
+        self.inverse_fields = []
+
     def new(self, **kwargs):
         """ Return a field of the same type as `self`, with its own parameters. """
         return type(self)(**kwargs)
@@ -394,16 +402,6 @@ class Field(object):
     #
     # Field setup
     #
-
-    def reset(self):
-        """ Prepare `self` for a new setup. """
-        self.setup_done = False
-        # self._triggers is a set of pairs (field, path) that represents the
-        # computed fields that depend on `self`. When `self` is modified, it
-        # invalidates the cache of each `field`, and registers the records to
-        # recompute based on `path`. See method `modified` below for details.
-        self._triggers = set()
-        self.inverse_fields = []
 
     def setup(self, env):
         """ Make sure that `self` is set up, except for recomputation triggers. """
@@ -639,8 +637,11 @@ class Field(object):
     #
 
     def to_column(self):
-        """ return a low-level field object corresponding to `self` """
-        assert self.store or self.column
+        """ Return a column object corresponding to `self`, or ``None``. """
+        if not self.store and self.compute:
+            # non-stored computed fields do not have a corresponding column
+            self.column = None
+            return None
 
         # determine column parameters
         #_logger.debug("Create fields._column for Field %s", self)
@@ -676,6 +677,7 @@ class Field(object):
     _column_groups = property(attrgetter('groups'))
     _column_change_default = property(attrgetter('change_default'))
     _column_deprecated = property(attrgetter('deprecated'))
+    _column_compute = property(lambda self: bool(self.compute))
 
     ############################################################################
     #
@@ -1269,7 +1271,9 @@ class Selection(Field):
                 if 'selection' in field._attrs:
                     selection = field._attrs['selection']
                 if 'selection_add' in field._attrs:
-                    selection = selection + field._attrs['selection_add']
+                    # use an OrderedDict to update existing values
+                    selection_add = field._attrs['selection_add']
+                    selection = OrderedDict(selection + selection_add).items()
             else:
                 selection = None
         self.selection = selection

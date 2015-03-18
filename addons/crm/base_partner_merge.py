@@ -297,8 +297,9 @@ class MergePartnerAutomatic(osv.TransientModel):
         if len(partner_ids) < 2:
             return
 
-        if len(partner_ids) > 3:
-            raise osv.except_osv(_('Error'), _("For safety reasons, you cannot merge more than 3 contacts together. You can re-open the wizard several times if needed."))
+        # AEA - Workaround to allow de-duplicate several duplicates
+        # if len(partner_ids) > 3:
+        #     raise osv.except_osv(_('Error'), _("For safety reasons, you cannot merge more than 3 contacts together. You can re-open the wizard several times if needed."))
 
         if openerp.SUPERUSER_ID != uid and len(set(partner.email for partner in proxy.browse(cr, uid, partner_ids, context=context))) > 1:
             raise osv.except_osv(_('Error'), _("All contacts must have the same email. Only the Administrator can merge contacts with different emails."))
@@ -324,7 +325,7 @@ class MergePartnerAutomatic(osv.TransientModel):
 
         _logger.info('(uid = %s) merged the partners %r with %s', uid, list(map(operator.attrgetter('id'), src_partners)), dst_partner.id)
         dst_partner.message_post(body='%s %s'%(_("Merged with the following partners:"), ", ".join('%s<%s>(ID %s)' % (p.name, p.email or 'n/a', p.id) for p in src_partners)))
-        
+
         for partner in src_partners:
             partner.unlink()
 
@@ -747,8 +748,8 @@ class MergePartnerAutomatic(osv.TransientModel):
         # select partner who have one least invoice
         partner_treated = ['@gmail.com']
         cr.execute("""  SELECT p.id, p.email
-                        FROM res_partner as p 
-                        LEFT JOIN account_invoice as a 
+                        FROM res_partner as p
+                        LEFT JOIN account_invoice as a
                         ON p.id = a.partner_id AND a.state in ('open','paid')
                         WHERE p.grade_id is NOT NULL
                         GROUP BY p.id

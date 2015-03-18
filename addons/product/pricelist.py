@@ -293,7 +293,7 @@ class product_pricelist(osv.osv):
                     if rule.base_pricelist_id:
                         price_tmp = self._price_get_multi(cr, uid,
                                 rule.base_pricelist_id, [(product,
-                                qty, False)], context=context)[product.id]
+                                qty, partner)], context=context)[product.id]
                         ptype_src = rule.base_pricelist_id.currency_id.id
                         price_uom_id = qty_uom_id
                         price = currency_obj.compute(cr, uid,
@@ -306,8 +306,8 @@ class product_pricelist(osv.osv):
                         if (not partner) or (seller_id.name.id != partner):
                             continue
                         seller = seller_id
-                    if not seller and product.seller_ids:
-                        seller = product.seller_ids[0]
+                    if not seller:
+                        continue
                     if seller:
                         qty_in_seller_uom = qty
                         seller_uom = seller.product_uom.id

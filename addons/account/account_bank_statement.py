@@ -588,7 +588,7 @@ class account_bank_statement_line(osv.osv):
             domain += [(amount_field, '<', 0), (amount_field, '>', (sign * amount))]
         else:
             domain += [(amount_field, '>', 0), (amount_field, '<', (sign * amount))]
-        mv_lines = self.get_move_lines_for_reconciliation(cr, uid, st_line, excluded_ids=excluded_ids, limit=5, additional_domain=domain)
+        mv_lines = self.get_move_lines_for_reconciliation(cr, uid, st_line, excluded_ids=excluded_ids, limit=5, additional_domain=domain, context=context)
         ret = []
         total = 0
         for line in mv_lines:
@@ -795,7 +795,7 @@ class account_bank_statement_line(osv.osv):
                     #post an account line that use the same currency rate than the counterpart (to balance the account) and post the difference in another line
                     ctx['date'] = mv_line.date
                     if mv_line.currency_id.id == mv_line_dict['currency_id'] \
-                            and float_is_zero(mv_line.amount_currency - abs(mv_line_dict['amount_currency']), precision_rounding=mv_line.currency_id.rounding):
+                            and float_is_zero(abs(mv_line.amount_currency) - abs(mv_line_dict['amount_currency']), precision_rounding=mv_line.currency_id.rounding):
                         debit_at_old_rate = mv_line.credit
                         credit_at_old_rate = mv_line.debit
                     else:
